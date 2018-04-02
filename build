@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Script de compilação do rooter
+# Autor: Lucas Vieira de Jesus
+# Brasília-DF, Abril de 2018
+
+echo [+] Building ...
+if [ "$1" = "--debug" ]; then
+	echo [*] Debug mode
+	v="$(make -f Makefile.mak)"
+else
+	echo [*] Release mode
+	v="$(make revision && make)"
+fi
+
+if [ "$?"="0" ]; then
+	echo [+] Build OK.
+else
+	echo [!] Build Error.
+fi

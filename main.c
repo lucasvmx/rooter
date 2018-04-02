@@ -28,6 +28,8 @@
 #include <string.h>
 #include <linux/limits.h>
 #include <signal.h>
+#include <stdio_ext.h> /* For __fpurge */
+#include "autorevision.h"
 
 #define MAX_USERNAME_LEN    64
 #define MAX_DEV_NAME_LEN    32
