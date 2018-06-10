@@ -21,19 +21,20 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <ctype.h>
-#include <sys/mount.h>
 #include <stdbool.h>
 #include <string.h>
-#include <linux/limits.h>
 #include <signal.h>
+#include <linux/limits.h>
 #include <stdio_ext.h> /* For __fpurge */
+#include <sys/mount.h>
+#include <unistd.h>
 #include "autorevision.h"
 
 #define MAX_USERNAME_LEN    64
 #define MAX_DEV_NAME_LEN    32
 #define MAX_OUTPUT_LEN      1024
+#define TMPFILE				"cmd.tmp"
 
 #ifdef DEBUG
     static const int debug = 1;
@@ -51,7 +52,7 @@ int main()
 {
     char username[MAX_USERNAME_LEN];
     __id_t uid;
-    const char *cmd = "ls /dev | grep sd > cmd.txt";
+    char cmd[64] = {0};
     FILE *file_pointer = NULL;
     char output_data[MAX_OUTPUT_LEN] = {0};
 	int id = 0;
@@ -87,9 +88,12 @@ int main()
     fprintf(stdout, "Give-me your username (Warning: max USERNAME length is 64)\n");
     fgets(username, MAX_USERNAME_LEN, stdin);
     fprintf(stdout, "Tell me the name of the device where linux is installed.\nSelect one of the list below:\n");
+	
+	/* Build command line */
+	snprintf(cmd, "ls /dev | grep sd > %s", TMPFILE);
     system(cmd);
 
-    file_pointer = fopen("cmd.txt", "r");
+    file_pointer = fopen(TMPFILE, "r");
     if(file_pointer == NULL)
     {
         fprintf(stdout, "Failed to get devices installed in this machine ...\n");
@@ -107,7 +111,7 @@ int main()
     }
 
     fclose(file_pointer);
-    remove( "cmd.txt");
+    remove(TMPFILE);
 
     fprintf(stdout, "\n");
 	fprintf(stdout, "Select one (default is 1): ");
@@ -146,6 +150,7 @@ int main()
 		device[i] = m[selected_id].device_path[i];
 	}
 
+	/* Mount filesystem */
 	mount_result = mount(device, temp_folder, NULL, 0, NULL);
 	if(mount_result == -1)
 	{
