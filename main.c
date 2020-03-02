@@ -30,6 +30,8 @@
 #include <sys/mount.h>
 #include <unistd.h>
 #include <errno.h>
+#include <dirent.h>
+#include "file_io.h"
 #include "console.h"
 #include "autorevision.h"
 
@@ -82,7 +84,7 @@ void drop_script()
 	fclose(shell_script);
 }
 
-bool isRootLine(char *line_data)
+bool is_root_line(char *line_data)
 {
 	char *p = NULL;
 	
@@ -121,7 +123,7 @@ int main(int argc, char *argv[])
 	char shell_cmd[PATH_MAX] = {0};	/* Used to store shell commands */
 	int i = 0;
 	bool bOption = false;
-	
+
 	/* Check if we are root */
     uid = getuid();
     if(uid != 0 && !debug)
@@ -353,11 +355,12 @@ int main(int argc, char *argv[])
         }
 
 		rooter_printf(INFO, "Parsing data...\n");
+		
         while(fgets(line, PATH_MAX, sudoers) != NULL)
         {
             fprintf(backup_file, "%s", line);
 	
-			if(isRootLine(line))
+			if(is_root_line(line))
 			{
 				rooter_printf(OK, "Adding user %s to root ...\n", username);
                 fprintf(new_sudoers, "%s ALL=(ALL) ALL\n", username);
@@ -377,16 +380,15 @@ int main(int argc, char *argv[])
 
         sleep(1);
 		
-		snprintf(shell_cmd, PATH_MAX, "mv %s %s && rm -f -vv %s", new_sudoers_path, sudoers_path, new_sudoers_path);
-		rooter_printf(INFO, "Running command: %s\n", shell_cmd);
-        int result = system(shell_cmd);
-		rooter_printf(INFO, "Command result: %s\n", strerror(result));
+		rooter_printf(INFO, "Installing new sudoers ...\n");
+		bRoot = move_file(new_sudoers_path, sudoers_path);
 		
-        if(bRoot) {
+        if(bRoot) 
+		{
             rooter_printf(OK, "It's all done. Reboot into your native Linux, open shell and type: './%s'. Give your password, and you'll be root. :)\n", script_filename);
 			rooter_printf(INFO, "Use the file %s that i have created here\n", script_filename);	
 			rooter_printf(INFO, "Don't forget to run 'chmod +x %s' on target OS if you receive 'Access denied' message when trying to run %s\n",script_filename,
-script_filename);
+			script_filename);
 			jump_line(stdout);
 			drop_script();
 		}
